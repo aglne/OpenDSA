@@ -13,7 +13,7 @@ $(document).ready(function () {
   // Start processing here
   //////////////////////////////////////////////////////////////////
   // Load the config object with interpreter and code created by odsaUtils.js
-  var config = ODSA.UTILS.loadConfig({"json_path": "huffman.json"}),
+  var config = ODSA.UTILS.loadConfig({"json_path": "AV/Binary/huffman.json"}),
       interpret = config.interpreter,       // get the interpreter
       settings = config.getSettings();      // Settings for the AV
 
@@ -63,7 +63,7 @@ $(document).ready(function () {
   trees[0].hide();
   av.umsg(interpret("av_c5"));
   var matrixData = [ ["<b>Char</b>", "<b>Freq</b>", "<b>Code</b>", "<b>Bits</b>"] ];
-  for (var i = 1; i < freqs.length; i++) {
+  for (var i = 0; i < freqs.length; i++) {
     matrixData.push([chars[i], freqs[i], codeArray[i], codeArray[i].length]);
   }
   var theMatrix = new av.ds.matrix(matrixData, {style: "plain"});

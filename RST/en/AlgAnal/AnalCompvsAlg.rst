@@ -1,15 +1,19 @@
 .. This file is part of the OpenDSA eTextbook project. See
 .. http://algoviz.org/OpenDSA for more details.
-.. Copyright (c) 2012-2013 by the OpenDSA Project Contributors, and
+.. Copyright (c) 2012-2016 by the OpenDSA Project Contributors, and
 .. distributed under an MIT open source license.
 
 .. avmetadata::
    :author: Cliff Shaffer
    :requires: growth rate
+   :satisfies:
    :topic: Algorithm Analysis
 
 Faster Computer, or Faster Algorithm?
 =====================================
+
+Faster Computer, or Faster Algorithm?
+-------------------------------------
 
 Imagine that you have a problem to solve, and you know of an algorithm
 whose running time is proportional to :math:`n^2` where :math:`n` is a
@@ -172,3 +176,5 @@ buying a computer ten times faster.
 Furthermore, when you do buy a faster computer, an algorithm with a
 slower growth rate provides a greater benefit in terms of larger
 problem size that can run in a certain time on the new computer.
+
+.. avembed:: Exercises/AlgAnal/FasterCorASumm.html ka

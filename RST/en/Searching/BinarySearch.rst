@@ -1,6 +1,6 @@
 .. This file is part of the OpenDSA eTextbook project. See
 .. http://algoviz.org/OpenDSA for more details.
-.. Copyright (c) 2012-2013 by the OpenDSA Project Contributors, and
+.. Copyright (c) 2012-2016 by the OpenDSA Project Contributors, and
 .. distributed under an MIT open source license.
 
 .. avmetadata::
@@ -27,6 +27,7 @@ We will call this an :term:`unsuccessful search`.
 Here is a simple implementation for sequential search.
 
 .. codeinclude:: Searching/Sequential
+      :tag: Sequential
 
 It is natural to ask how long a program or algorithm will take to
 run.
@@ -94,23 +95,20 @@ times before we reach 1. [#]_
 
 .. avembed:: AV/Searching/binarySearchPRO.html ss
 
-Notes
-=====
-
 .. [#] It seems to be really "obvious" that sequential search is the
        best that you can do on an unsorted array. 
        But writing a convincing proof that no algorithm could ever be
        discovered that is better is surprisingly difficult.
        This is an example of a
-       :ref:`lower bounds proof <lower bounds proof> <BoundLower>` to
+       :term:`lower bounds proof <lower bounds proof> <BoundLower>` to
        find the cost for the beest possible :term:`algorithm` to solve
        the :term:`problem` of search in an unsorted array.
 
 .. [#] It is possible to
-       :ref:`prove <Search Lower Bound> <BoundSearch>`
+       :term:`prove <Search Lower Bound> <SortedSearch>`
        that binary search is the most efficient algorithm possible in
        the worst case when searching in a sorted array.
-       This is even more difficult than proving the sequential search
+       This is even more difficult than proving that sequential search
        is the most efficient algorithm possible on an unsorted array.
 
 .. odsascript:: AV/Searching/binarySearchCON.js

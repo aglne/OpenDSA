@@ -58,11 +58,13 @@ def format_mod_options(options):
   return option_str
 
 # Returns a boolean indicating whether or not the module can be completed
-def determine_module_completable(mod_attrib):
+def determine_module_completable(mod_attrib, dispModComp):
   # Set a JS flag on the page, indicating whether or not the module can be completed
   if 'dispModComp' in mod_attrib:
     # Use the value specified in the configuration file to override the calculated value
     dispModComp = mod_attrib['dispModComp']
+  elif dispModComp:
+    dispModComp = dispModComp
   else:
     dispModComp = False
 
@@ -88,7 +90,10 @@ def parse_directive_args(line, line_num, expected_num_args = -1, console_msg_pre
     print_err("%sERROR: Invalid Sphinx directive declaration" % console_msg_prefix)
 
   # Isolates the arguments to the directive
-  args = line[line.find(':: ') + 3:].split(' ')
+  if "'" in line:
+    args = [line[line.find(':: ') + 3:]]
+  else:
+    args = line[line.find(':: ') + 3:].split(' ')
 
   # Ensure the expected number of arguments was parsed (skip the check if -1)
   if expected_num_args > -1 and len(args) != expected_num_args:
@@ -145,6 +150,18 @@ def isFigure(item):
 
   return False
 
+def isSlide(item):
+  if item.startswith('.. slide::'):
+    return True
+
+  return False
+
+def isSlideConf(item):
+  if item.startswith('.. slideconf::'):
+    return True
+
+  return False
+
 
 def get_directive_type(directive):
   if isTable(directive):
@@ -158,6 +175,12 @@ def get_directive_type(directive):
 
   elif isFigure(directive):
     return 'figure'
+
+  elif isSlide(directive):
+    return 'slide'
+
+  elif isSlideConf(directive):
+    return 'slideconf'
 
   return ''
 
@@ -249,7 +272,7 @@ class ODSA_RST_Module:
 
     exercises = mod_attrib['exercises']
 
-    dispModComp = determine_module_completable(mod_attrib)
+    dispModComp = determine_module_completable(mod_attrib, config.dispModComp)
 
     filename = '{0}RST/{1}/{2}.rst'.format(config.odsa_dir, config.lang, mod_path)
 
@@ -297,9 +320,31 @@ class ODSA_RST_Module:
              break
 
         line = mod_data[i].strip()
+        next_line =  mod_data[i+1].strip() if i+1 < len(mod_data) else ''
+        is_chapter = next_line == "="*len(line) or next_line == "-"*len(line)
+        if is_chapter:
+          processed_sections.append(line)
 
         # Determine the type of directive
         dir_type = get_directive_type(line)
+
+
+        #Code to change the ..slide directive to a header when the -s option
+        # is not added
+        if (os.environ['SLIDES'] == 'no'):
+          #Remove the slideConf Directive
+          if dir_type == 'slideconf' or line.startswith(':autoslides:'):
+            mod_data[i] = ''
+
+          #Change the slide directive
+          if dir_type == 'slide':
+            line_split = line.split('::')
+            header = line_split[1].strip()
+            underline = ''
+            for c in range(0, len(header)):
+              underline += '~'
+            mod_data[i] =  header + '\n' + underline
+
 
         # Update figure, equation, theorem, table counters
         if dir_type in ['table', 'example', 'theorem', 'figure']:
@@ -449,7 +494,7 @@ class ODSA_RST_Module:
                 exer_conf = exercises[av_name]
 
                 # List of valid options for avembed directive
-                options = ['long_name', 'points', 'required', 'showhide', 'threshold', 'oembed_url']
+                options = ['long_name', 'points', 'required', 'showhide', 'threshold', 'external_url']
 
                 rst_options = [' '*start_space + '   :%s: %s\n' % (option, str(exer_conf[option])) for option in options if option in exer_conf]
 
@@ -466,6 +511,28 @@ class ODSA_RST_Module:
                 rst_options.append(' '*start_space +'   :exer_opts: %s\n' % xop_str)
 
                 mod_data[i] += ''.join(rst_options)
+        elif line.startswith('.. extrtoolembed::'):
+          # Parse the arguments from the directive
+
+          args = parse_directive_args(mod_data[i], i, 1, console_msg_prefix)
+          if args:
+            external_tool_name = args[0].replace("'", "")
+
+            # Append module name to embedded exercise
+            mod_data[i] += ' '*start_space + '   :module: %s\n' % mod_name
+
+            if external_tool_name not in exercises:
+              # Add the name to a list of missing exercises
+              missing_exercises.append(external_tool_name)
+            else:
+              # Add the necessary information from the configuration file
+              exer_conf = exercises[external_tool_name]
+              # List of valid options for avembed directive
+              options = ['long_name', 'learning_tool']
+
+              rst_options = [' '*start_space + '   :%s: %s\n' % (option, str(exer_conf[option])) for option in options if option in exer_conf]
+
+              mod_data[i] += ''.join(rst_options)
         elif line.startswith('.. showhidecontent::'):
           # Parse the arguments from the directive
           args = parse_directive_args(mod_data[i], i, 1, console_msg_prefix)
@@ -520,7 +587,7 @@ class ODSA_RST_Module:
       if not avmetadata_found:
         print_err("%sWARNING: %s does not contain an ..avmetadata:: directive" % (console_msg_prefix, mod_name))
 
-      mod_sections = mod_attrib['sections'].keys() if 'sections' in mod_attrib else []
+      mod_sections = mod_attrib['sections'].keys() if 'sections' in mod_attrib and mod_attrib['sections'] != None else []
 
       # Print a list of sections that appear in the config file but not the module
       missing_sections = list(set(mod_sections) - set(processed_sections))

@@ -10,9 +10,9 @@ CC= g++ -std=c++0x
 
 #### Do the chapters #######################################################
 
-all: build sorting lists
+all: sorting lists
 
-build: build
+build:
 	mkdir build
 
 clean:
@@ -21,14 +21,14 @@ clean:
 
 Anal: build build/Anal/success
 
-build/Anal/success: Misc/Anal.cpp Searching/bsearch.cpp Searching/Sequential.cpp Misc/Largest.cpp Utils/utils.h
+build/Anal/success: Misc/Anal.cpp Searching/Bsearch.cpp Searching/Sequential.cpp Misc/LargestTest.cpp Utils/utils.h
 	@echo "Analysis Chapter Test"
 	@rm -rf build/Anal
 	@mkdir build/Anal
 	@cp Misc/Anal.cpp build/Anal
-	@cp Searching/bsearch.cpp build/Anal
+	@cp Searching/Bsearch.cpp build/Anal
 	@cp Searching/Sequential.cpp build/Anal
-	@cp Misc/Largest.cpp build/Anal
+	@cp Misc/LargestTest.cpp build/Anal
 	@cp Utils/utils.h build/Anal
 	cd build/Anal; \
 	$(CC) -c $(CFLAGS) $(CPPFLAGS) -o Anal.o Anal.cpp; \
@@ -39,11 +39,11 @@ lists: ListTest
 
 ListTest: build build/ListTest/success
 
-build/ListTest/success: Lists/ListADT.h Lists/AList.h Lists/ListTest.cpp
+build/ListTest/success: Lists/List.h Lists/AList.h Lists/ListTest.cpp
 	@echo "Array-based List Test"
 	-@rm -rf build/ListTest
 	@mkdir build/ListTest
-	@cp Lists/ListADT.h build/ListTest
+	@cp Lists/List.h build/ListTest
 	@cp Lists/AList.h build/ListTest
 	@cp Lists/ListTest.cpp build/ListTest
 	cd build/ListTest; \
@@ -69,7 +69,26 @@ build/InssortTest/success: Sorting/Insertionsort.cpp Sorting/SortTest.cpp Utils/
 	cd build/InssortTest; \
 	$(CC) -c $(CFLAGS) $(CPPFLAGS) -o Insertionsort.o Insertionsort.cpp; \
 	$(CC) $(CFLAGS) Insertionsort.o -o Insertionsort; \
-	./Insertionsort 1000
+	./Insertionsort 10000
+
+
+InssortTime: build build/InssortTime/success
+
+build/InssortTime/success: Sorting/Insertionsort.cpp Sorting/SortTime.cpp Utils/Checkorder.cpp Utils/Comparable.cpp Utils/utils.h Utils/KVPair.cpp Utils/Int.cpp
+	@echo "Inssort Time Test"
+	-@rm -rf build/InssortTime
+	@mkdir build/InssortTime
+	@cp Sorting/Insertionsort.cpp build/InssortTime
+	@cp Sorting/SortTime.cpp build/InssortTime/SortTest.cpp
+	@cp Utils/Checkorder.cpp build/InssortTime
+	@cp Utils/KVPair.cpp build/InssortTime
+	@cp Utils/Comparable.cpp build/InssortTime
+	@cp Utils/Int.cpp build/InssortTime
+	@cp Utils/utils.h build/InssortTime
+	cd build/InssortTime; \
+	$(CC) -c $(CFLAGS) $(CPPFLAGS) -o Insertionsort.o Insertionsort.cpp; \
+	$(CC) $(CFLAGS) Insertionsort.o -o Insertionsort; \
+	./Insertionsort 10000 1000
 
 
 Bubblesort: build build/BubblesortTest/success

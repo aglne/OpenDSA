@@ -1,4 +1,5 @@
 /* *** ODSATag: BST *** */
+/* *** ODSATag: BSTa *** */
 // Binary Search Tree implementation
 class BST {
   private BSTNode root; // Root of the BST
@@ -17,7 +18,9 @@ class BST {
     root = inserthelp(root, e);
     nodecount++;
   }
+/* *** ODSAendTag: BSTa *** */
 
+/* *** ODSATag: BSTb *** */
   // Remove a record from the tree
   // key: The key value of record to remove
   // Returns the record removed, null if there is none.
@@ -36,16 +39,17 @@ class BST {
 
   // Return the number of records in the dictionary
   public int size() { return nodecount; }
+/* *** ODSAendTag: BSTb *** */
 /* *** ODSAendTag: BST *** */
 
   // Return a record that matches the key value
 /* *** ODSATag: findhelp *** */
   private Comparable findhelp(BSTNode rt, Comparable key) {
     if (rt == null) return null;
-    if (rt.element().compareTo(key) > 0)
+    if (rt.value().compareTo(key) > 0)
       return findhelp(rt.left(), key);
-    else if (rt.element().compareTo(key) == 0)
-      return rt.element();
+    else if (rt.value().compareTo(key) == 0)
+      return rt.value();
     else return findhelp(rt.right(), key);
   }
 /* *** ODSAendTag: findhelp *** */
@@ -56,7 +60,7 @@ class BST {
 /* *** ODSATag: inserthelp *** */
   private BSTNode inserthelp(BSTNode rt, Comparable e) {
     if (rt == null) return new BSTNode(e);
-    if (rt.element().compareTo(e) >= 0)
+    if (rt.value().compareTo(e) >= 0)
       rt.setLeft(inserthelp(rt.left(), e));
     else
       rt.setRight(inserthelp(rt.right(), e));
@@ -86,16 +90,16 @@ class BST {
 /* *** ODSATag: removehelp *** */
   private BSTNode removehelp(BSTNode rt, Comparable key) {
     if (rt == null) return null;
-    if (rt.element().compareTo(key) > 0)
+    if (rt.value().compareTo(key) > 0)
       rt.setLeft(removehelp(rt.left(), key));
-    else if (rt.element().compareTo(key) < 0)
+    else if (rt.value().compareTo(key) < 0)
       rt.setRight(removehelp(rt.right(), key));
     else { // Found it
       if (rt.left() == null) return rt.right();
       else if (rt.right() == null) return rt.left();
       else { // Two children
         BSTNode temp = getmax(rt.left());
-        rt.setElement(temp.element());
+        rt.setValue(temp.value());
         rt.setLeft(deletemax(rt.left()));
       }
     }
@@ -107,7 +111,7 @@ class BST {
   private void printhelp(BSTNode rt) {
     if (rt == null) return;
     printhelp(rt.left());
-    printVisit(rt.element());
+    printVisit(rt.value());
     printhelp(rt.right());
   }
 /* *** ODSAendTag: printhelp *** */

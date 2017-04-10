@@ -1,30 +1,35 @@
 .. This file is part of the OpenDSA eTextbook project. See
 .. http://algoviz.org/OpenDSA for more details.
-.. Copyright (c) 2012-2013 by the OpenDSA Project Contributors, and
+.. Copyright (c) 2012-2016 by the OpenDSA Project Contributors, and
 .. distributed under an MIT open source license.
 
 .. avmetadata:: 
-   :author: Sally Hamouda
+   :author: Sally Hamouda and Cliff Shaffer
    :satisfies: recursion writing
    :topic: Recursion
-
-
 
 Writing Practice Exercises
 ==========================
 
-.. avembed:: Exercises/RecurTutor/recWIsbalancPROGSumm.html ka
+Recursion Programming Exercise: Cannonballs
+-------------------------------------------
 
-.. avembed:: Exercises/RecurTutor/recWChckPlndrmPROGSumm.html ka
+.. extrtoolembed:: 'Recursion Programming Exercise: Cannonballs'
 
-.. avembed:: Exercises/RecurTutor/recWRvrsStrngPROGSumm.html ka
 
-.. avembed:: Exercises/RecurTutor/recWRmvDuplctPROGSumm.html ka
+Recursion Programming Exercise: Check Palindrome
+------------------------------------------------
 
-.. avembed:: Exercises/RecurTutor/recWPascalPROGSumm.html ka
+.. extrtoolembed:: 'Recursion Programming Exercise: Check Palindrome'
 
-.. avembed:: Exercises/RecurTutor/recWCnonballPROGSumm.html ka
 
-.. avembed:: Exercises/RecurTutor/recWIsMeasurblPROGSumm.html ka
+Recursion Programming Exercise: Subset Sum
+------------------------------------------
 
-.. avembed:: Exercises/RecurTutor/recWStckRevrsPROGSumm.html ka
+.. extrtoolembed:: 'Recursion Programming Exercise: Subset Sum'
+
+
+Recursion Programming Exercise: Pascal Triangle
+-----------------------------------------------
+
+.. extrtoolembed:: 'Recursion Programming Exercise: Pascal Triangle'

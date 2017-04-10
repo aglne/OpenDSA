@@ -20,23 +20,24 @@ import os
 import json
 import collections
 import codecs
+from collections import Iterable
 from urlparse import urlparse
 
 error_count = 0
 
-required_fields = ['chapters', 'code_lang', 'module_origin', 'title']
+required_fields = ['chapters']
 
-optional_fields = ['allow_anonymous_credit', 'assumes', 'av_origin', 'av_root_dir', 'build_cmap', 'build_dir', 'build_JSAV', 'code_dir', 'exercise_origin', 'exercises_root_dir', 'exercise_server',
-                   'glob_mod_options', 'glob_exer_options', 'lang', 'logging_server', 'req_full_ss', 'score_server', 'start_chap_num', 'suppress_todo', 'tabbed_codeinc', 'theme', 'theme_dir', 'LTI']
+optional_fields = ['assumes', 'av_origin', 'av_root_dir', 'build_cmap', 'build_dir', 'build_JSAV','code_dir',
+'exercise_origin', 'exercises_root_dir', 'glob_mod_options', 'glob_exer_options', 'lang','req_full_ss', 'start_chap_num',
+'suppress_todo', 'tabbed_codeinc', 'theme', 'theme_dir', 'dispModComp', 'tag', 'local_mode', 'title', 'desc', 'av_origin',
+'av_root_dir', 'code_lang', 'course_id', 'LMS_url', 'module_map', 'inst_book_id','module_position','inst_exercise_id',
+'inst_chapter_id','options','inst_module_id','id', 'total_points', 'last_compiled' ]
 
-lang_file = os.path.abspath('tools/language_msg.json')
 
 listed_modules = []
 listed_chapters = []
 
 # Prints the given string to standard error
-
-
 def print_err(err_msg):
     sys.stderr.write('%s\n' % err_msg)
 
@@ -81,6 +82,7 @@ def get_odsa_dir():
     # Convert to Unix-style path
     return os.path.dirname(os.path.dirname(os.path.abspath(__file__))).replace("\\", "/") + '/'
 
+lang_file = get_odsa_dir() +  '/tools/language_msg.json'
 
 # Error message handling based on validate_json.py (https://gist.github.com/byrongibson/1921038)
 def parse_error(err):
@@ -130,7 +132,9 @@ def validate_exercise(exer_name, exercise):
         error_count += 1
 
     required_fields = []
-    optional_fields = ['exer_options', 'long_name', 'points', 'remove', 'required', 'showhide', 'threshold', 'oembed_url']
+    optional_fields = ['exer_options', 'long_name', 'points', 'remove', 'required', 'showhide', 'threshold', 'external_url'
+                        'inst_book_id','module_position','inst_exercise_id',
+                        'inst_chapter_id','options','inst_module_id','id', 'total_points']
 
     # Ensure required fields are present
     for field in required_fields:
@@ -150,8 +154,10 @@ def validate_module(mod_name, module, conf_data):
     """Validate a module object"""
     global error_count
 
-    required_fields = ['exercises']
-    optional_fields = ['codeinclude', 'dispModComp', 'long_name', 'mod_options', 'sections']
+    required_fields = []
+    optional_fields = ['codeinclude', 'dispModComp', 'long_name', 'mod_options', 'sections', 'exercises',
+                        'lms_module_item_id', 'lms_section_item_id','inst_book_id','module_position','inst_exercise_id',
+                        'inst_chapter_id','options','inst_module_id','id', 'total_points']
 
     # Get module name
     get_mod_name(mod_name)
@@ -168,10 +174,6 @@ def validate_module(mod_name, module, conf_data):
             print_err('ERROR: Unknown field, %s, found in module %s' % (field, mod_name))
             error_count += 1
 
-    # Check validity of exercises
-    if 'exercises' in module:
-        for exer in module['exercises']:
-            validate_exercise(exer, module['exercises'][exer])
 
     if 'codeinclude' in module:
         # Check whether every language specified for a codeinclude is supported in code_lang
@@ -187,39 +189,32 @@ def validate_module(mod_name, module, conf_data):
                 print('ERROR: Language directory %s does not exist' % lang_dir)
                 error_count += 1
 
+    sections = module['sections']
+
+    if sections != None:
+        for section in sections:
+            section_obj = sections[section]
+            if isinstance(section_obj, dict):
+              for attr in section_obj:
+                if isinstance(section_obj[attr], dict):
+                    validate_exercise(attr, section_obj[attr])
+
 # get names of chapter
-
-
 def get_chap_names(chapters):
     for k in chapters:
         listed_chapters.append(k)
 
+
 # Validate a section
-
-
-def validate_section(section, conf_data):
-    """Validate a chapter or section"""
-    for subsect in section:
-        if 'hidden' in section[subsect]:
-            print_err('WARNING: Section %s will be hidden from the TOC' % subsect)
-            continue
-        is_mod = 'exercises' in section[subsect]
-
-        if section[subsect] == {}:
-            print_err('WARNING: Section %s is empty' % subsect)
-            continue
-        elif not is_mod:
-            for field in section[subsect]:
-                if type(section[subsect][field]) != type(collections.OrderedDict()):
-                    is_mod = True
-                    break
-
-        if is_mod:
-            # Subsect is a module
-            validate_module(subsect, section[subsect], conf_data)
-        else:
-            validate_section(section[subsect], conf_data)
-
+def validate_chapter(conf_data):
+    """Validate a chapter by validating all its modules"""
+    chapters = conf_data['chapters']
+    for chapter in chapters:
+        chapter_obj = chapters[chapter]
+        for module in chapter_obj:
+            module_obj = chapter_obj[module]
+            if isinstance(module_obj, dict):
+                validate_module(module, module_obj, conf_data)
 
 # Validate an OpenDSA configuration file
 def validate_config_file(config_file_path, conf_data):
@@ -233,48 +228,6 @@ def validate_config_file(config_file_path, conf_data):
         if field not in conf_data:
             print_err('ERROR: Required field missing, %s' % field)
             error_count += 1
-
-    validate_origin(conf_data['module_origin'], 'module')
-
-    # Ensure optional fields are configured properly
-    if 'score_server' in conf_data and conf_data['score_server'] != '' and not conf_data['score_server'].startswith('https'):
-        print_err('WARNING: "score_server" should use HTTPS')
-
-    if 'av_origin' in conf_data:
-        validate_origin(conf_data['av_origin'], 'av')
-
-        # av_origin does not match the module origin, but av_root_dir does not point to a remote system
-        if ('av_root_dir' not in conf_data or not conf_data['av_root_dir'].startswith('http')) and conf_data['av_origin'] != conf_data['module_origin']:
-            print_err('ERROR: av_root_dir is local but av_origin does not match module_origin')
-            error_count += 1
-
-    if 'exercise_origin' in conf_data:
-        validate_origin(conf_data['exercise_origin'], 'exercise')
-
-        # exercise_origin does not match the module origin, but exercise_root_dir does not point to a remote system
-        if ('exercise_root_dir' not in conf_data or not conf_data['exercise_root_dir'].startswith('http')) and conf_data['exercise_origin'] != conf_data['module_origin']:
-            print_err('ERROR: exercise_root_dir is local but exercise_origin does not match module_origin')
-            error_count += 1
-
-    # Display an error message and exit if 'av_root_dir' is an absolute pathname to a remote system and its domain doesn't match 'module_origin' or 'av_origin' (or 'av_origin' isn't specified)
-    if 'av_root_dir' in conf_data and conf_data['av_root_dir'].startswith('http') and not conf_data['av_root_dir'].startswith(conf_data['module_origin']) and ('av_origin' not in conf_data or not conf_data['av_root_dir'].startswith(conf_data['av_origin'])):
-        error_count += 1
-
-        if 'av_origin' not in conf_data:
-            print_err('ERROR: "av_origin" not specified when "av_root_dir" points to a remote system')
-        else:
-            print_err('ERROR: "av_origin" does not match domain of remote "av_root_dir"')
-
-    # Display an error message and exit if 'exercises_root_dir' is an absolute
-    # pathname to a remote system and its domain doesn't match 'module_origin'
-    # or 'exercise_origin' (or 'exercise_origin' isn't specified)
-    if 'exercises_root_dir' in conf_data and conf_data['exercises_root_dir'].startswith('http') and not conf_data['exercises_root_dir'].startswith(conf_data['module_origin']) and ('exercise_origin' not in conf_data or not conf_data['exercises_root_dir'].startswith(conf_data['exercise_origin'])):
-        error_count += 1
-
-        if 'exercise_origin' not in conf_data:
-            print_err('ERROR: "exercise_origin" not specified when "exercises_root_dir" points to a remote system')
-        else:
-            print_err('ERROR: "exercise_origin" does not match domain of remote "exercises_root_dir"')
 
     mod_opts = conf_data['glob_mod_options']
     exer_opts = conf_data['glob_exer_options']
@@ -300,7 +253,7 @@ def validate_config_file(config_file_path, conf_data):
             print_err('ERROR: Unknown field, %s' % field)
             error_count += 1
 
-    validate_section(conf_data['chapters'], conf_data)
+    validate_chapter(conf_data)
     get_chap_names(conf_data['chapters'])
 
     if error_count > 0:
@@ -318,59 +271,31 @@ def set_defaults(conf_data):
 
     conf_data['code_dir'] = process_path(conf_data['code_dir'], odsa_dir)
 
-    # Allow anonymous credit by default
-    if 'allow_anonymous_credit' not in conf_data:
-        conf_data['allow_anonymous_credit'] = True
-
-    # 'assumes' does not need to be initialized
-
-    # Assume exercises are hosted on same domain as modules
-    if 'av_origin' not in conf_data:
-        conf_data['av_origin'] = conf_data['module_origin']
 
     # 'exercises_root_dir' should default to the OpenDSA root directory
     if 'av_root_dir' not in conf_data:
         conf_data['av_root_dir'] = odsa_dir
 
-    # If no exercise_server is specified, use an empty string to specify a disabled server
-    if 'exercise_server' not in conf_data:
-        conf_data['exercise_server'] = ''
+    # 'exercises_root_dir' should default to the OpenDSA root directory
+    if 'exercises_root_dir' not in conf_data:
+        conf_data['exercises_root_dir'] = odsa_dir
 
-    # If no logging_server is specified, use an empty string to specify a disabled server
-    if 'logging_server' not in conf_data:
-        conf_data['logging_server'] = ''
 
-    # If no score_server is specified, use an empty string to specify a disabled server
-    if 'score_server' not in conf_data:
-        conf_data['score_server'] = ''
-
-    # Strip the '/' from the end of the server URLs
-    conf_data['exercise_server'] = conf_data['exercise_server'].rstrip('/')
-    conf_data['logging_server'] = conf_data['logging_server'].rstrip('/')
-    conf_data['score_server'] = conf_data['score_server'].rstrip('/')
+    # 'assumes' does not need to be initialized
 
     if 'build_dir' not in conf_data:
         conf_data['build_dir'] = 'Books'
 
     # 'build_JSAV' does not need to be initialized
 
-    if 'module_origin' not in conf_data:
-        # Create a default module_origin for later processing
-        conf_data['module_origin'] = ''
-
-    # Assume exercises are hosted on same domain as modules
-    if 'exercise_origin' not in conf_data:
-        conf_data['exercise_origin'] = conf_data['module_origin']
-
-    # 'exercises_root_dir' should default to the OpenDSA root directory
-    if 'exercises_root_dir' not in conf_data:
-        conf_data['exercises_root_dir'] = odsa_dir
-
     # If no global module options are specified, defer to module-specific options or the defaults in odsaUtils.js
     if 'glob_mod_options' not in conf_data:
         conf_data['glob_mod_options'] = {}
 
     # If no global exercise options are specified, defer to exercise-specific options or the defaults in odsaUtils.js
+    if 'dispModComp' not in conf_data:
+        conf_data['dispModComp'] = True
+
     if 'glob_exer_options' not in conf_data:
         conf_data['glob_exer_options'] = {}
 
@@ -403,6 +328,54 @@ def set_defaults(conf_data):
     if 'theme_dir' not in conf_data:
         conf_data['theme_dir'] = '%sRST/_themes' % odsa_dir
 
+    conf_data['av_origin'] = ''
+    conf_data['av_root_dir'] = odsa_dir
+    conf_data['exercises_root_dir'] = odsa_dir
+
+    if 'code_lang' not in conf_data or not bool(conf_data['code_lang']) or conf_data['code_lang'] == '{}':
+        conf_data['code_lang'] ={
+                                  "Java": {"ext": ["java"],"label": "Java","lang": "java"
+                                  },
+                                  "Processing": {"ext": ["pde"],"label": "Processing","lang": "java"
+                                  },
+                                  "Java_Generic": {"ext": [  "java"],"label": "Java (Generic)","lang": "java"
+                                  },
+                                  "C++": {"ext": [  "cpp",  "h"],"label": "C++","lang": "C++"
+                                  }
+                                }
+
+def group_exercises(conf_data, no_lms):
+    """group all exercises of one module in exercises attribute"""
+    chapters = conf_data['chapters']
+
+    for chapter in chapters:
+        chapter_obj = chapters[chapter]
+
+        if not isinstance(chapter_obj, Iterable):
+            continue
+
+        for module in chapter_obj:
+            module_obj = chapter_obj[module]
+
+            if not isinstance(module_obj, Iterable):
+                continue
+
+            conf_data['chapters'][chapter][module]['exercises'] = {}
+
+            sections = module_obj.get("sections")
+            if bool(sections) and sections != None:
+                for section in sections:
+                    section_obj = sections[section]
+                    if section_obj != None and isinstance(section_obj, dict):
+                      for attr in section_obj:
+                          if isinstance(section_obj[attr], dict):
+                              exercise_obj = section_obj[attr]
+                              conf_data['chapters'][chapter][module]['exercises'][attr] = exercise_obj
+                    if 'learning_tool' in section_obj.keys():
+                        exercise_obj = {}
+                        exercise_obj['long_name'] = section
+                        exercise_obj['learning_tool'] = section_obj['learning_tool']
+                        conf_data['chapters'][chapter][module]['exercises'][section] = exercise_obj
 
 def get_translated_text(lang_):
     """ Loads appropriate text from language_msg.json file based on book language  """
@@ -455,6 +428,51 @@ def get_translated_text(lang_):
     return lang_text, final_lang
 
 
+def read_conf_file(config_file_path):
+    """read configuration file as json"""
+
+    # Throw an error if the specified config files doesn't exist
+    if not os.path.exists(config_file_path):
+        print_err("ERROR: File %s doesn't exist\n" % config_file_path)
+        sys.exit(1)
+
+    # Try to read the configuration file data as JSON
+    try:
+        with open(config_file_path) as config:
+            # Force python to maintain original order of JSON objects (or else the chapters and modules will appear out of order)
+            conf_data = json.load(config, object_pairs_hook=collections.OrderedDict)
+    except ValueError, err:
+        # Error message handling based on validate_json.py (https://gist.github.com/byrongibson/1921038)
+        msg = err.message
+        print_err(msg)
+
+        if msg == 'No JSON object could be decoded':
+            print_err('ERROR: %s is not a valid JSON file or does not use a supported encoding\n' % config_file_path)
+        else:
+            err = parse_error(msg).groupdict()
+            # cast int captures to int
+            for k, v in err.items():
+                if v and v.isdigit():
+                    err[k] = int(v)
+
+            with open(config_file_path) as config:
+                lines = config.readlines()
+
+            for ii, line in enumerate(lines):
+                if ii == err["lineno"] - 1:
+                    break
+
+            print_err("""
+    %s
+    %s^-- %s
+    """ % (line.replace("\n", ""), " " * (err["colno"] - 1), err["msg"]))
+
+        # TODO: Figure out how to get (simple)json to accept different encodings
+        sys.exit(1)
+
+    return conf_data
+
+
 class ODSA_Config:
 
     def __getitem__(self, key):
@@ -463,46 +481,15 @@ class ODSA_Config:
     def __setitem__(self, key, value):
         self.__dict__[key] = value
 
-    def __init__(self, config_file_path):
+    def __init__(self, config_file_path, output_directory=None, no_lms=None):
+
         """Initializes an ODSA_Config object by reading in the JSON config file, setting default values, and validating the configuration"""
-        # Throw an error if the specified config files doesn't exist
-        if not os.path.exists(config_file_path):
-            print_err("ERROR: File %s doesn't exist\n" % config_file_path)
-            sys.exit(1)
 
-        # Try to read the configuration file data as JSON
-        try:
-            with open(config_file_path) as config:
-                # Force python to maintain original order of JSON objects (or else the chapters and modules will appear out of order)
-                conf_data = json.load(config, object_pairs_hook=collections.OrderedDict)
-        except ValueError, err:
-            # Error message handling based on validate_json.py (https://gist.github.com/byrongibson/1921038)
-            msg = err.message
-            print_err(msg)
+        conf_data = read_conf_file(config_file_path)
 
-            if msg == 'No JSON object could be decoded':
-                print_err('ERROR: %s is not a valid JSON file or does not use a supported encoding\n' % config_file_path)
-            else:
-                err = parse_error(msg).groupdict()
-                # cast int captures to int
-                for k, v in err.items():
-                    if v and v.isdigit():
-                        err[k] = int(v)
-
-                with open(config_file_path) as config:
-                    lines = config.readlines()
-
-                for ii, line in enumerate(lines):
-                    if ii == err["lineno"] - 1:
-                        break
-
-                print_err("""
-        %s
-        %s^-- %s
-        """ % (line.replace("\n", ""), " " * (err["colno"] - 1), err["msg"]))
-
-            # TODO: Figure out how to get (simple)json to accept different encodings
-            sys.exit(1)
+        # group exercises
+        group_exercises(conf_data, no_lms)
+        # print(json.dumps(conf_data))
 
         # Assign defaults to optional settings
         set_defaults(conf_data)
@@ -510,8 +497,6 @@ class ODSA_Config:
         # Make sure the config file is valid
         validate_config_file(config_file_path, conf_data)
 
-        # Convert the Python booleans to JavaScript booleans
-        conf_data['allow_anonymous_credit'] = str(conf_data['allow_anonymous_credit']).lower()
         conf_data['req_full_ss'] = str(conf_data['req_full_ss']).lower()
 
         # Make conf_data publicly available
@@ -533,7 +518,10 @@ class ODSA_Config:
         self.config_file_path = config_file_path
 
         # Parse the name of the config file to use as the book name
-        self.book_name = os.path.basename(config_file_path).replace('.json', '')
+        if output_directory is None:
+            self.book_name = os.path.basename(config_file_path).replace('.json', '')
+        else:
+            self.book_name = output_directory
 
         self.odsa_dir = get_odsa_dir()
 
@@ -549,6 +537,9 @@ class ODSA_Config:
 
         # The Unix-style relative path between the build directory and the OpenDSA root directory
         self.rel_build_to_odsa_path = os.path.relpath(self.odsa_dir, self.book_dir + self.rel_book_output_path).replace("\\", "/") + '/'
+
+        # module canvas id map, will be filled later while course creation.
+        self.module_map = {}
 
 
 # Code to execute when run as a standalone program

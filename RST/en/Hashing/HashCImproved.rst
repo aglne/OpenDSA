@@ -5,7 +5,7 @@
 
 .. avmetadata::
    :author: Cliff Shaffer
-   :prerequisites:
+   :requires: collision resolution
    :topic: Hashing
 
 .. odsalink:: AV/Hashing/collisionCON.css
@@ -66,7 +66,11 @@ probe sequence that visits all slots for every key.
 
 Now you can practice linear probing by different step sizes.
 
-.. avembed:: Exercises/Hashing/HashingLinearStepProbePRO.html ka
+.. avembed:: Exercises/Hashing/HashLinearStepPPRO.html ka
+
+
+Pseudo-Random Probing
+---------------------
 
 Consider the situation where :math:`c = 2` and we wish to insert a record
 with key :math:`k_1` such that
@@ -84,9 +88,6 @@ We would prefer that the probe sequence for :math:`k_1`
 after the first step on the sequence should not be identical to the
 probe sequence of :math:`k_2`.
 Instead, their probe sequences should diverge.
-
-Pseudo-Random Probing
----------------------
 
 The ideal probe function would select the next position on the probe
 sequence at random from among the unvisited slots; that is, the probe
@@ -113,10 +114,10 @@ random permutation of the values from 1 to :math:`M - 1` in slots 1 to
 
 Here is a practice exercise for pseudo-random probing.
 
-.. avembed:: Exercises/Hashing/HashingPseudoRandomProbePRO.html ka
+.. avembed:: Exercises/Hashing/HashPseudoRandomPPRO.html ka
 
 Pseudo-random probing exhibits another desirable feature in a hash
-function. 
+function.
 
 .. inlineav:: collisionCON4 ss
    :output: show
@@ -144,7 +145,7 @@ Then the :math:`i` th value in the probe sequence would be
 
 Now you can practice quadratic probing.
 
-.. avembed:: Exercises/Hashing/HashingQuadraticProbePRO.html ka
+.. avembed:: Exercises/Hashing/HashQuadraticPPRO.html ka
 
 There is one problem with quadratic probing: Its probe sequence
 typically will not visit all slots in the hash table.
@@ -176,6 +177,7 @@ free slot will be found.
 Alternatively, if the hash table size is a power of two and the probe
 function is :math:`\textbf{p}(K, i) = (i^2 + i)/2`,
 then every slot in the table will be visited by the probe function.
+
 
 Double Hashing
 --------------
@@ -231,17 +233,20 @@ for some value :math:`m` and have
 :math:`\textbf{h}_2` return an odd value
 between 1 and :math:`2^m`.
 We can get that result with this secondary hash function:
-:math:`\textbf{h}_2(k) = (((k/M) \mod (M/2)) * 2) + 1`.
+:math:`\textbf{h}_2(k) = (((k/M) \mod (M/2)) * 2) + 1`. [#]_
 
 .. inlineav:: collisionCON7 ss
    :output: show
 
+|
+
 .. inlineav:: collisionCON8 ss
    :output: show
 
+
 Now you can try it.
 
-.. avembed:: Exercises/Hashing/HashingDoubleProbePRO.html ka
+.. avembed:: Exercises/Hashing/HashDoublePPRO.html ka
 
 .. TODO::
    :type: AV
@@ -251,4 +256,46 @@ Now you can try it.
    The following visualization lets you test out different combinations
    of hash function and collision resolution, on your own input data.
 
-.. odsascript:: AV/Hashing/collisionCON.js
+.. [#] The secondary hash function
+       :math:`\textbf{h}_2(k) = (((k/M) \mod (M/2)) * 2) + 1` might
+       seem rather mysterious, so let's break this down.
+       This is being used in the context of two facts: (1) We want the
+       function to return an odd value that is less than :math:`M` the
+       hash table size, and (2) we are using a hash table of size
+       :math:`M = 2^m`, which means that taking the mod of size
+       :math:`M` is using the bottom :math:`m` bits of the key value.
+       OK, since :math:`\textbf{h}_2` is multiplying something by 2 and
+       adding 1, we guarentee that it is an odd number.
+       Now, :math:`((X \mod (M/2)) * 2) + 1` must be in the range 1
+       and :math:`M-1` (if you need to, play around with this on paper
+       to convince yourself that this is true).
+       This is exactly what we want.
+       The last piece of the puzzle is the first part :math:`k/M`.
+       That is not strictly necessary.
+       But remember that since the table size is :math:`M = 2^m`, this
+       is the same as shifting the key value right by :math:`m` bits.
+       In other words, we are not using the bottom :math:`m` bits to
+       decide on the second hash function value, which is especially a
+       good thing if we used the bottom :math:`m` bits to decide on
+       the first hash function value!
+       In other words, we really do not want the value of the step
+       sized used by the linear probing to be fixed to the slot in the
+       hash table that we chose.
+       So we are using the next :math:`m` bits of the key value
+       instead.
+       Note that this would only be a good idea if we have keys in a
+       large enough key range, that is, we want plenty of use of those
+       second :math:`m` bits in the key range.
+       This will be true if the max key value uses at least :math:`2m`
+       bits, meaning that the max key value should be at least the
+       square of the hash table size.
+       This is not a problem for typical hashing applications.
+
+.. odsascript:: AV/Hashing/collisionCON1.js
+.. odsascript:: AV/Hashing/collisionCON2.js
+.. odsascript:: AV/Hashing/collisionCON3.js
+.. odsascript:: AV/Hashing/collisionCON4.js
+.. odsascript:: AV/Hashing/collisionCON5.js
+.. odsascript:: AV/Hashing/collisionCON6.js
+.. odsascript:: AV/Hashing/collisionCON7.js
+.. odsascript:: AV/Hashing/collisionCON8.js

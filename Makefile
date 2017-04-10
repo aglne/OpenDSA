@@ -1,13 +1,20 @@
+ifeq ($(OS),Windows_NT)
+	SHELL=C:/Windows/System32/cmd.exe
+endif
 RM = rm -rf
 CONFIG_SCRIPT = tools/configure.py
 TARGET = build
+LINT = eslint --no-color
 CSSOLDLINTFLAGS = --quiet --errors=empty-rules,import,errors --warnings=duplicate-background-images,compatible-vendor-prefixes,display-property-grouping,fallback-colors,duplicate-properties,shorthand,gradients,font-sizes,floats,overqualified-elements,import,regex-selectors,rules-count,unqualified-attributes,vendor-prefix,zero-units
 CSSLINTFLAGS = --quiet --ignore=ids,adjoining-classes
 MINIMIZE = uglifyjs
 
-.PHONY: all clean lint csslint jshint min CS2114 CS2114F15 CS223 CS5114 CS3114 CS3114notes CS150 OpenDSA test testX IS allBooks nomin pull CPSC270S15 CS2401 COP3530 CS208 ECE252 Tutorial TDDD86_2014 S15 CSCI115
+.PHONY: all clean alllint csslint lint lintExe jsonlint min testLTI test TestLMS
 
-all: lint
+all: alllint
+
+
+allbooks: Everything test CS2 CS3 RecurTutor PL
 
 clean:
 	- $(RM) *~
@@ -18,12 +25,14 @@ clean:
 	- $(RM) Scripts/*~
 	- $(RM) config/*~
 
-lint: csslint jshint jshintlib
+alllint: csslint lint jsonlint
 
 csslint:
 	@echo 'running csslint'
 	@csslint $(CSSLINTFLAGS) AV/Background/*.css
 	@csslint $(CSSLINTFLAGS) AV/Design/*.css
+
+TODOcsslint:
 	@csslint $(CSSLINTFLAGS) AV/List/*.css
 	@csslint $(CSSLINTFLAGS) AV/Sorting/*.css
 	@csslint $(CSSLINTFLAGS) AV/Hashing/*.css
@@ -32,207 +41,150 @@ csslint:
 	@csslint $(CSSLINTFLAGS) Doc/*.css
 	@csslint $(CSSLINTFLAGS) lib/*.css
 
-jshint:
-	@echo 'running jshint'
-	-@jshint AV/Background/*.js
-	-@jshint AV/Binary/*.js
-	-@jshint AV/Binary/*.json
-	-@jshint AV/Design/*.js
-	-@jshint AV/Design/*.json
-	-@jshint AV/General/*.js
-	-@jshint AV/General/*.json
-	-@jshint AV/List/*.js
-	-@jshint AV/List/*.json
-	-@jshint AV/Sorting/*.js
-	-@jshint AV/Sorting/*.json
-	-@jshint AV/Hashing/*.js
-	-@jshint AV/Searching/*.js
-	-@jshint AV/Searching/*.json
-	-@jshint AV/Sorting/*.js
-	-@jshint AV/Sorting/*.json
-	-@jshint Exercises/Hashing/*.js
+lint: lintExe
+	@echo 'running eslint'
+	-@$(LINT) AV/Background/*.js
+	-@$(LINT) AV/Design/*.js
 
-jshintlib:
-	-@jshint lib/odsaUtils.js
-	-@jshint lib/odsaAV.js
-	-@jshint lib/odsaMOD.js
-	-@jshint lib/gradebook.js
-	-@jshint lib/registerbook.js
-	-@jshint lib/createcourse.js
-	-@jshint lib/conceptMap.js
+TODOlintAV:
+	@echo 'linting AVs'
+	-@$(LINT) AV/Binary/*.js
+	-@$(LINT) AV/General/*.js
+	-@$(LINT) AV/List/*.js
+	-@$(LINT) AV/Sorting/*.js
+	-@$(LINT) AV/Hashing/*.js
+	-@$(LINT) AV/Searching/*.js
+	-@$(LINT) AV/Sorting/*.js
+
+lintExe:
+	@echo 'linting KA Exercises'
+	-@$(LINT) Exercises/AlgAnal/*.js
+	-@$(LINT) Exercises/Background/*.js
+	-@$(LINT) Exercises/Binary/*.js
+	-@$(LINT) Exercises/Design/*.js
+	-@$(LINT) Exercises/General/*.js
+	-@$(LINT) Exercises/Graph/*.js
+	-@$(LINT) Exercises/Hashing/*.js
+	-@$(LINT) Exercises/Indexing/*.js
+	-@$(LINT) Exercises/List/*.js
+	-@$(LINT) Exercises/RecurTutor/*.js
+	-@$(LINT) Exercises/RecurTutor2/*.js
+	-@$(LINT) Exercises/Sorting/*.js
+
+TODO$(LINT)lib:
+	@echo 'linting libraries'
+	-@$(LINT) lib/odsaUtils.js
+	-@$(LINT) lib/odsaAV.js
+	-@$(LINT) lib/odsaMOD.js
+	-@$(LINT) lib/gradebook.js
+	-@$(LINT) lib/registerbook.js
+	-@$(LINT) lib/createcourse.js
+	-@$(LINT) lib/conceptMap.js
+
+jsonlint:
+	@jsonlint -q AV/Background/*.json
+	@jsonlint -q AV/Design/*.json
+	@jsonlint -q config/*.json
+	@jsonlint -q config/Old/*.json
 
 min: nomin
 #lib/odsaUtils-min.js lib/site-min.css lib/odsaAV-min.js lib/odsaAV-min.css lib/odsaMOD-min.js lib/odsaMOD-min.css lib/gradebook-min.js lib/gradebook-min.css lib/registerbook-min.js
 
-F15: CS2114F15 CS3114
+Plain: EverythingPlain CS2Plain CS3Plain PLPlain
 
-Pointers: min
-	python $(CONFIG_SCRIPT) config/Pointers.json
-
-Tutorial: min
-	python $(CONFIG_SCRIPT) config/Tutorial.json
-
-TDDD86_2014: min
-	python $(CONFIG_SCRIPT) config/TDDD86_2014.json
-
-good: min
-	python $(CONFIG_SCRIPT) config/good.json
-
-RecurTutor: min
-	python $(CONFIG_SCRIPT) config/RecurTutor.json
-
-RecurTutor2: min
-	python $(CONFIG_SCRIPT) config/RecurTutor2.json
-
-CSCI102: min
-	python $(CONFIG_SCRIPT) config/CSCI102.json
-
-CSCI115: min
-	python $(CONFIG_SCRIPT) config/CSCI115S15.json
-
-CS150: min
-	python $(CONFIG_SCRIPT) config/CS150.json
-
-CPSC270: min
-	python $(CONFIG_SCRIPT) config/CPSC270S15Siochi.json
-	python $(CONFIG_SCRIPT) config/CPSC270S15Flores.json
-
-CSCI204: min
-	python $(CONFIG_SCRIPT) config/CSCI204S15.json
-
-CS208: min
-	python $(CONFIG_SCRIPT) config/CS208.json
-
-CS223: min
-	python $(CONFIG_SCRIPT) config/CS223.json
-
-CSE-A1140: min
-	python $(CONFIG_SCRIPT) config/CSE-A1140.json
-
-CSE-A1141: min
-	python $(CONFIG_SCRIPT) config/CSE-A1141.json
-
-CSE-A1141eng: min
-	python $(CONFIG_SCRIPT) config/CSE-A1141eng.json
-
-CS2114: min
-	python $(CONFIG_SCRIPT) config/CS2114SS215.json
-
-CS2114F15: min
-	python $(CONFIG_SCRIPT) config/CS2114F15.json
-
-CS2401: min
-	python $(CONFIG_SCRIPT) config/CS2401.json
-
-CS3114: min
-	python $(CONFIG_SCRIPT) config/CS3114.json
-
-CS3114AM: min
-	python $(CONFIG_SCRIPT) config/CS3114AM.json
-
-CS3114PM: min
-	python $(CONFIG_SCRIPT) config/CS3114PM.json
-
-CS3114notes: min
-	python $(CONFIG_SCRIPT) s config/CS3114notes.json
-
-COP3530: min
-	python $(CONFIG_SCRIPT) config/COP3530.json
-
-CS4104S15: min
-	python $(CONFIG_SCRIPT) config/CS4104S15.json
-
-CS5114: min
-	python $(CONFIG_SCRIPT) config/CS5114.json
-
-CS5114S15: min
-	python $(CONFIG_SCRIPT) config/CS5114S15.json
-
-ECE252: min
-	python $(CONFIG_SCRIPT) config/ECE252S15.json
-
-OpenDSA: min
-	python $(CONFIG_SCRIPT) config/OpenDSA.json
-
-IS: min
-	python $(CONFIG_SCRIPT) config/IS.json
-
-NP: min
-	python $(CONFIG_SCRIPT) config/NP.json
+EverythingPlain: min
+	python $(CONFIG_SCRIPT) config/Everything.json --no-lms
 
 test: min
-	python $(CONFIG_SCRIPT) config/test.json
+	python $(CONFIG_SCRIPT) config/Test.json --no-lms
 
-testX: min
-	python $(CONFIG_SCRIPT) config/testX.json
+CS2Plain: min
+	python $(CONFIG_SCRIPT) config/CS2.json --no-lms
 
-testcmap: min
-	python $(CONFIG_SCRIPT) config/testcmap.json
+CS2114: min
+	python $(CONFIG_SCRIPT) config/CS2114.json --no-lms
 
-testanal: min
-	python $(CONFIG_SCRIPT) config/testanal.json	
+CS3Plain: min
+	python $(CONFIG_SCRIPT) config/CS3.json --no-lms
 
-testfi: min
-	python $(CONFIG_SCRIPT) config/testfi.json
+ECE252: min
+	python $(CONFIG_SCRIPT) config/ECE252.json --no-lms
 
-testpt: min
-	python $(CONFIG_SCRIPT) config/testpt.json
+PLPlain: min
+	python $(CONFIG_SCRIPT) config/PL.json --no-lms
 
-testsv: min
-	python $(CONFIG_SCRIPT) config/testsv.json
+CS4104: min
+	python $(CONFIG_SCRIPT) config/CS4104.json --no-lms
 
-testcpp: min
-	python $(CONFIG_SCRIPT) config/testcpp.json
+CS4104raw: min
+	python $(CONFIG_SCRIPT) config/CS4104raw.json --no-lms
 
-uwosh: min
-	python $(CONFIG_SCRIPT) config/uwosh.json
+CS3slides: min
+	python $(CONFIG_SCRIPT) -s config/CS3slides.json --no-lms
 
-uwosh-taylor: min
-	python $(CONFIG_SCRIPT) config/uwosh-taylor.json
+CS3notes: min
+	python $(CONFIG_SCRIPT) config/CS3slides.json -b CS3notes --no-lms
 
-uwosh-pl: min
-	python $(CONFIG_SCRIPT) config/uwosh-pl.json
+testcmapPlain: min
+	python $(CONFIG_SCRIPT) config/testcmap.json --no-lms
 
-List: min
-	python $(CONFIG_SCRIPT) s config/List.json
+CS260: min
+	python $(CONFIG_SCRIPT) config/CS260.json --no-lms
 
-Dev: min
-	python $(CONFIG_SCRIPT) config/Dev.json
+CS271-UWO: min
+	python $(CONFIG_SCRIPT) config/CS271-UWO.json --no-lms
 
-Everything: min
-	python $(CONFIG_SCRIPT) config/Everything.json
+CSCI204: min
+	python $(CONFIG_SCRIPT) config/CSCI204.json --no-lms
 
-AlgAnalTest: min
-	python $(CONFIG_SCRIPT) config/AlgAnalTest.json	
+CSCI115: min
+	python $(CONFIG_SCRIPT) config/CSCI115.json --no-lms
 
-invalid: min
-	python $(CONFIG_SCRIPT) config/invalid.json
+COSC2436: min
+	python $(CONFIG_SCRIPT) config/COSC2436.json --no-lms
 
-C2GEN: min
-	python $(CONFIG_SCRIPT) config/C2GEN.json
+COMP232: min
+	python $(CONFIG_SCRIPT) config/COMP232.json --no-lms
 
-slides: min
-	python $(CONFIG_SCRIPT) -s config/slides.json
+SDAP13: min
+	python $(CONFIG_SCRIPT) config/SDAP13.json --no-lms
 
-allBooks: CS208 CS2114 CS2401 CS3114 CS3530 OpenDSA Everything testcmap
+simple_demo: min
+	python $(CONFIG_SCRIPT) config/simple_demo.json --no-lms
+
+Pointers: min
+	python $(CONFIG_SCRIPT) config/Pointers.json --no-lms
+
+PointersBook: min
+	python $(CONFIG_SCRIPT) config/PointersBook.json --no-lms
+
+PointersSushma: min
+	python $(CONFIG_SCRIPT) config/PointersSushma.json --no-lms
+
+CS3_exs: min
+	python $(CONFIG_SCRIPT) config/CS3_exs.json --no-lms
+
+JFLAP: min
+	python $(CONFIG_SCRIPT) config/JFLAP.json --no-lms
 
 nomin:
 	@cp JSAV/build/JSAV.js JSAV/build/JSAV-min.js
 	@cp lib/odsaUtils.js lib/odsaUtils-min.js
 	@cp lib/odsaMOD.js lib/odsaMOD-min.js
 	@cp lib/odsaAV.js lib/odsaAV-min.js
+	@cp lib/odsaKA.js lib/odsaKA-min.js
 	@cp lib/gradebook.js lib/gradebook-min.js
-	@cp ODSAkhan-exercises/khan-exercise.js lib/khan-exercise-min.js
 	@cp lib/registerbook.js lib/registerbook-min.js
-	# @cp lib/createcourse.js lib/createcourse-min.js
 	@cp lib/site.css lib/site-min.css
 	@cat lib/normalize.css lib/odsaAV.css > lib/odsaAV-min.css
 	@cp lib/odsaMOD.css lib/odsaMOD-min.css
 	@cp lib/odsaStyle.css lib/odsaStyle-min.css
+	@cp lib/odsaKA.css lib/odsaKA-min.css
 	@cp lib/gradebook.css lib/gradebook-min.css
 
 pull:
 	git pull
+	git submodule init
 	git submodule update
 	make -s -C JSAV
 	make -s min
@@ -250,9 +202,17 @@ lib/odsaAV-min.js: lib/odsaAV.js
 	@echo 'Minimizing lib/odsaAV.js'
 	@$(MINIMIZE) lib/odsaAV.js --comments '/^!|@preserve|@license|@cc_on/i' > lib/odsaAV-min.js
 
+lib/odsaKA-min.js: lib/odsaKA.js
+	@echo 'Minimizing lib/odsaKA.js'
+	@$(MINIMIZE) lib/odsaKA.js --comments '/^!|@preserve|@license|@cc_on/i' > lib/odsaKA-min.js
+
 lib/odsaAV-min.css: lib/odsaAV.css
 	@echo 'Minimizing lib/odsaAV.css'
 	@$(MINIMIZE) lib/odsaAV.css --comments '/^!|@preserve|@license|@cc_on/i' > lib/odsaAV-min.css
+
+lib/odsaKA-min.css: lib/odsaKA.css
+	@echo 'Minimizing lib/odsaKA.css'
+	@$(MINIMIZE) lib/odsaKA.css --comments '/^!|@preserve|@license|@cc_on/i' > lib/odsaKA-min.css
 
 lib/odsaMOD-min.js: lib/odsaMOD.js
 	@echo 'Minimizing lib/odsaMOD.js'

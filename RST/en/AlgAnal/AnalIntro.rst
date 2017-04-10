@@ -1,15 +1,22 @@
 .. This file is part of the OpenDSA eTextbook project. See
 .. http://algoviz.org/OpenDSA for more details.
-.. Copyright (c) 2012-2013 by the OpenDSA Project Contributors, and
+.. Copyright (c) 2012-2016 by the OpenDSA Project Contributors, and
 .. distributed under an MIT open source license.
 
 .. avmetadata::
    :author: Cliff Shaffer
+   :requires: problems; algorithms
    :satisfies: growth rate
    :topic: Algorithm Analysis
 
 Comparing Algorithms
 ====================
+
+Comparing Algorithms
+--------------------
+
+Introduction
+~~~~~~~~~~~~
 
 How do you compare two algorithms for solving some problem in terms
 of efficiency?
@@ -95,10 +102,10 @@ The only alternative is to use some other measure as a surrogate for
 running time.
 
 Basic Operations and Input Size
--------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Of primary consideration when estimating an algorithm's performance
-is the number of :term:`basic operations` required by
+is the number of :term:`basic operations <basic operation>` required by
 the algorithm to process an input of a certain size.
 The terms "basic operations" and "size" are both
 rather vague and depend on the algorithm being analyzed.
@@ -214,7 +221,7 @@ because the cost depends on the value of :math:`n`
    :math:`\mathbf{T}(n) = c_2 n^2`.
 
 Growth Rates
-------------
+~~~~~~~~~~~~
 
 The :term:`growth rate` for an algorithm is the rate at which the cost
 of the algorithm grows as the size of its input grows.
@@ -323,18 +330,20 @@ resources consumed by an algorithm.
       \mathsf{2^{60}} & \mathsf{2^{90}} & \mathsf{2^{1 {\rm G}}}\\
       \end{array}
 
-.. todo::
-   :type: Exercise
+.. avembed:: Exercises/AlgAnal/CompareGrowth.html ka 
 
-   From a large list of growth rate functions, select six and provide
-   these to the student in random order. The student will then put these
-   in order of growth rate. There should be KA exercises (NOT OpenDSA
-   exercises) already that do "put in order", with librarary support.
-   Alternative implementation: Use an invisible JSAV array to store the
-   strings.
+Growth Rates Ordering Exercise
+------------------------------
+
+.. avembed:: Exercises/AlgAnal/GrowthRatesPRO.html ka 
 
 .. todo::
    :type: AV
 
-   To make students more engaged in the previous exercise, we may need a tool that allow students to input two growth rate functions, and then the tool should plot the graph of both functions and mark their crossing point. The student also should be allowed to play with the constant values for both functions and see that this only changes the crossing point but doesn't change which function grows faster than the other. 
-
+   To make students more engaged in the GrowthRates exercise, we may
+   need a tool that allows students to input two growth rate functions.
+   Then the tool should plot the graph of both functions and mark
+   their crossing point. The student also should be allowed to play
+   with the constant values for both functions and see that this only
+   changes the crossing point but doesn't change which function grows
+   faster than the other.

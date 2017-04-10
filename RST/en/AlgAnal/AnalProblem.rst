@@ -1,6 +1,6 @@
 .. This file is part of the OpenDSA eTextbook project. See
 .. http://algoviz.org/OpenDSA for more details.
-.. Copyright (c) 2012-2013 by the OpenDSA Project Contributors, and
+.. Copyright (c) 2012-2016 by the OpenDSA Project Contributors, and
 .. distributed under an MIT open source license.
 
 .. avmetadata::
@@ -12,30 +12,44 @@
 Analyzing Problems
 ==================
 
+Analyzing Problems
+------------------
+
 You most often use the techniques of "algorithm" analysis to analyze
 an :term:`algorithm`, or the instantiation of an algorithm as a
 :term:`program`.
 You can also use these same techniques to analyze the cost of a
 :term:`problem`.
-It should make sense to you to say that the :term:`upper bound` for a
-problem cannot be worse than the upper bound for the best algorithm
-that we know for that problem.
-But what does it mean to give a :term:`lower bound` for a problem?
+The key question that we want to ask is: How hard is a problem?
+Certainly we should expect that in some sense, the problem of sorting a
+list of records is harder than the problem of searching a list of
+records for a given key value.
+Certainly the algorithms that we know for sorting some records seem to
+be more expensive than the algorithms that we know for searching those
+same records.
 
-Consider a graph of cost over all inputs of a given size :math:`n` for
-some algorithm for a given problem.
-Define :math:`\mathcal{A}` to be the collection of all algorithms that
-solve the problem (theoretically, there are an infinite number of such
-algorithms).
-Now, consider the collection of all the graphs for all of the
-(infinitely many) algorithms in :math:`\mathcal{A}`.
-The worst case lower bound is the *least* of all the
-*highest* points on all the graphs.
+What we need are useful definitions for the :term:`upper bound` and
+:term:`lower bound` of a problem.
 
-.. TODO::
-   :tag: Slideshow
+One might start by thinking that the upper bound for a problem is how
+hard any algorithm can be for the problem.
+But we can make algorithms as bad as we want, so that is not useful.
+Instead, what is useful is to say that a problem is only as hard as
+what we CAN do.
+In other words, we should define the upper bound for a problem to be
+the **best** algorithm that we know for the problem.
+Of course, whenever we talk about bounds, we have to say when they
+apply.
+We we really should say something like the best algorithm that we know
+in the worst case, or the best algorithm that we know in the average
+case.
 
-   Present a visualization of the previous paragraph
+But what does it mean to give a lower bound for a problem?
+Lower bound refers to the minimum that any algorithm MUST cost.
+For example, when searching an unsorted list, we MUST look at every
+record.
+When sorting a list, we MUST look at every record (to even know if it
+is sorted).
 
 It is much easier to show that an algorithm (or program) is in
 :math:`\Omega(f(n))` than it is to show that a problem is in
@@ -43,6 +57,9 @@ It is much easier to show that an algorithm (or program) is in
 For a problem to be in :math:`\Omega(f(n))` means that *every*
 algorithm that solves the problem is in :math:`\Omega(f(n))`,
 even algorithms that we have not thought of!
+In other words, EVERY algorithm MUST have at least this cost.
+So, to prove a lower bound, we need an argument that is true, even for
+algorithms that we don't know.
 
 So far all of our examples of algorithm analysis
 give "obvious" results, with big-Oh always matching :math:`\Omega`.
@@ -104,8 +121,14 @@ If the lower bound for the problem matches the upper bound for the
 algorithm (within a constant factor), then we know that we can find an
 algorithm that is better only by a constant factor.
 
-Notes
------
+So, to summarize:
+The upper bound for a problem is the best that you CAN do,
+while the lower bound for a problem is the least work that you MUST
+do.
+If those two are the same, then we say that we really understand our
+problem.
 
 .. [#] While it is fortunate to know the truth, it is unfortunate that
-       sorting is :math:`\Theta(n \log n)` rather than :math:`\Theta(n)`!
+       sorting is :math:`\Theta(n \log n)` rather than :math:`\Theta(n)`.
+
+.. avembed:: Exercises/AlgAnal/AnalProblemSumm.html ka

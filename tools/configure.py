@@ -1,4 +1,3 @@
-#! /usr/bin/python
 #
 # This script builds an OpenDSA textbook according to a specified configuration file
 #   - Creates an ODSA_Config object from the specified configuration file
@@ -39,14 +38,22 @@ import re
 import subprocess
 import codecs
 import datetime
+import threading
+import requests
+import urllib
+
 from collections import Iterable
 from optparse import OptionParser
 from config_templates import *
 from ODSA_RST_Module import ODSA_RST_Module
-from ODSA_Config import ODSA_Config
-from postprocessor import update_TOC, update_TermDef
+from ODSA_Config import ODSA_Config, parse_error
+from postprocessor import update_TOC, update_TermDef, make_lti
+from urlparse import urlparse
 
-# List of exercises encountered in RST files that do not appear in the
+
+requests.packages.urllib3.disable_warnings()
+
+# List ocanvas_module_idf exercises encountered in RST files that do not appear in the
 # configuration file
 missing_exercises = []
 
@@ -74,8 +81,6 @@ module_chap_map = {}
 num_ref_map = {}
 
 # Prints the given string to standard error
-
-
 def print_err(err_msg):
     sys.stderr.write('%s\n' % err_msg)
 
@@ -87,6 +92,52 @@ def print_err(err_msg):
 #   - current_section_numbers - a list that contains the numbering scheme for each section or module ([chapter].[section].[...].[module])
 #   - section_name - a string passed to modules for inclusion in the RST header that specifies which chapter / section the module belongs to
 
+
+# read lti_config.json
+def read_conf_file(config_file_path):
+    """read configuration file as json"""
+
+    # Throw an error if the specified config files doesn't exist
+    if not os.path.exists(config_file_path):
+        print_err("INFO: course will be created for the first time")
+        return False
+
+    # Try to read the configuration file data as JSON
+    try:
+        with open(config_file_path) as config:
+            # Force python to maintain original order of JSON objects (or else the chapters and modules will appear out of order)
+            # conf_data = json.load(config, object_pairs_hook=collections.OrderedDict)
+            conf_data = json.load(config)
+    except ValueError, err:
+        # Error message handling based on validate_json.py (https://gist.github.com/byrongibson/1921038)
+        msg = err.message
+        print_err(msg)
+
+        if msg == 'No JSON object could be decoded':
+            print_err('ERROR: %s is not a valid JSON file or does not use a supported encoding\n' % config_file_path)
+        else:
+            err = ODSA_Config.parse_error(msg).groupdict()
+            # cast int captures to int
+            for k, v in err.items():
+                if v and v.isdigit():
+                    err[k] = int(v)
+
+            with open(config_file_path) as config:
+                lines = config.readlines()
+
+            for ii, line in enumerate(lines):
+                if ii == err['lineno'] - 1:
+                    break
+
+            print_err("""
+    %s
+    %s^-- %s
+    """ % (line.replace("\n", ""), " " * (err['colno'] - 1), err['msg']))
+
+        # TODO: Figure out how to get (simple)json to accept different encodings
+        sys.exit(1)
+
+    return conf_data
 
 def process_section(config, section, index_rst, depth, current_section_numbers=[], section_name=''):
     # Initialize the section number for the current depth
@@ -143,8 +194,6 @@ def process_section(config, section, index_rst, depth, current_section_numbers=[
 #   - depth - the depth of the recursion, used to determine the number of spaces to print before the module name to ensure proper indentation
 #   - current_section_numbers - a list that contains the numbering scheme for each section or module ([chapter].[section].[...].[module])
 #   - section_name - a string passed to modules for inclusion in the RST header that specifies which chapter / section the module belongs to
-
-
 def process_module(config, index_rst, mod_path, mod_attrib={'exercises': {}}, depth=0, current_section_numbers=[], section_name=''):
     global todo_list
     global images
@@ -182,7 +231,7 @@ def process_module(config, index_rst, mod_path, mod_attrib={'exercises': {}}, de
     # Append data from the processed module to the global variables
     todo_list += module.todo_list
     images += module.images
-    missing_exercises += module.missing_exercises
+    #missing_exercises += module.missing_exercises
     satisfied_requirements += module.requirements_satisfied
     num_ref_map = dict(num_ref_map.items() + module.num_ref_map.items())
     if len(module.cmap_dict['concepts']) > 0:
@@ -233,10 +282,7 @@ def generate_index_rst(config, slides=False):
         # Process the Gradebook and Registerbook as well
         if not slides:
             process_module(config, mod_path='Gradebook', index_rst=index_rst)
-            process_module(
-                config, mod_path='RegisterBook', index_rst=index_rst)
-            process_module(
-                config, mod_path='CreateCourse', index_rst=index_rst)
+            process_module(config, mod_path='RegisterBook', index_rst=index_rst)
 
         # If a ToDo file will be generated, append it to index.rst
         if len(todo_list) > 0:
@@ -325,18 +371,28 @@ def initialize_conf_py_options(config, slides):
     options = {}
     options['title'] = config.title
     options['book_name'] = config.book_name
-    options['exercise_server'] = config.exercise_server
-    options['logging_server'] = config.logging_server
-    options['score_server'] = config.score_server
-    options['module_origin'] = config.module_origin
     options['theme_dir'] = config.theme_dir
     options['theme'] = config.theme
     options['odsa_dir'] = config.odsa_dir
     options['book_dir'] = config.book_dir
     options['code_dir'] = config.code_dir
+    options['tag'] = config.tag
     options['tabbed_code'] = config.tabbed_codeinc
     options['code_lang'] = json.dumps(config.code_lang)
     options['text_lang'] = json.dumps(config.lang)
+
+
+    #Adding multiple tags support
+    if config.tag:
+      tags_string = ""
+      tags_array = []
+      tags_array += [a.strip() for a in config.tag.split(';')]
+      for tag in tags_array:
+        tags_string += " -t "+tag
+      options["tag"] = tags_string
+    else:
+      options["tag"] = ""
+
     # convert the translation text into unicode sstrings
     tmpSTR = ''
     for k, v in config.text_translated.iteritems():
@@ -349,8 +405,28 @@ def initialize_conf_py_options(config, slides):
     options['eb2root'] = config.rel_build_to_odsa_path
     options['rel_book_output_path'] = config.rel_book_output_path
     options['slides_lib'] = 'hieroglyph' if slides else ''
+    options['local_mode'] = str(config.local_mode).title()
 
     return options
+
+
+def identical_dict(prev_org, current):
+    prev = prev_org.copy()
+    if "item_id" in prev:
+        del prev["item_id"]
+    if "module_item_id" in prev:
+        del prev["module_item_id"]
+    if "canvas_module_id" in prev:
+        del prev["canvas_module_id"]
+
+    prev_keys = set(prev.keys())
+    current_keys = set(current.keys())
+    intersect_keys = prev_keys.intersection(current_keys)
+    added = prev_keys - current_keys
+    removed = current_keys - prev_keys
+    modified = {o : (prev[o], current[o]) for o in intersect_keys if prev[o] != current[o]}
+    same = set(o for o in intersect_keys if prev[o] == current[o])
+    return not modified
 
 
 def configure(config_file_path, options):
@@ -358,11 +434,12 @@ def configure(config_file_path, options):
     global satisfied_requirements
 
     slides = options.slides
+    no_lms = options.no_lms
 
     print "Configuring OpenDSA, using " + config_file_path
 
     # Load and validate the configuration
-    config = ODSA_Config(config_file_path)
+    config = ODSA_Config(config_file_path, options.output_directory, options.no_lms)
 
     # Delete everything in the book's HTML directory, otherwise the
     # post-processor can sometimes append chapter numbers to the existing HTML
@@ -393,6 +470,10 @@ def configure(config_file_path, options):
             sys.exit(1)
 
     print "Writing files to " + config.book_dir + "\n"
+
+    # local mode option
+    config.local_mode = str(options.local).lower()
+
 
     # Initialize output directory, create index.rst, and process all of the
     # modules
@@ -470,13 +551,17 @@ def configure(config_file_path, options):
         with codecs.open(config.book_dir + 'html/_static/GraphDefs.json', 'w', 'utf-8') as graph_defs_file:
             json.dump(cmap_map, graph_defs_file)
 
+    if not slides and not no_lms:
+        make_lti(config, no_lms)
+
 # Code to execute when run as a standalone program
 if __name__ == "__main__":
     parser = OptionParser()
-    parser.add_option("-s", "--slides", help="Causes configure.py to create slides",
-                      dest="slides", action="store_true", default=False)
-    parser.add_option("--dry-run", help="Causes configure.py to configure the book but stop before compiling it",
-                      dest="dry_run", action="store_true", default=False)
+    parser.add_option("-s", "--slides", help="Causes configure.py to create slides",dest="slides", action="store_true", default=False)
+    parser.add_option("--dry-run", help="Causes configure.py to configure the book but stop before compiling it", dest="dry_run", action="store_true", default=False)
+    parser.add_option("-b", help="Accepts a custom directory name instead of using the config file's name.",dest="output_directory", default=None)
+    parser.add_option("--local", help="Causes the compiled book to work in local mode, which means no communication with the server",dest="local", action="store_true", default=False)
+    parser.add_option("--no-lms", help="Compile book without changing internal links required by LMS",dest="no_lms", action="store_true", default=False)
     (options, args) = parser.parse_args()
 
     if options.slides:
@@ -487,7 +572,7 @@ if __name__ == "__main__":
     # Process script arguments
     if len(args) != 1:
         print_err(
-            "Usage: " + sys.argv[0] + " [-s] [--dry-run] config_file_path")
+            "Usage: " + sys.argv[0] + " [-s] [--dry-run] [--no-lms] config_file_path [-c]")
         sys.exit(1)
 
     configure(args[0], options)

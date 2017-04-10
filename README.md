@@ -11,7 +11,7 @@ exercises.
 
 ## Documentation
 
-System documentation can be found at http://opendsa.readthedocs.org/.
+System documentation can be found at http://opendsa.readthedocs.io/.
 
 
 ## Setup
@@ -43,7 +43,7 @@ The source files for the documentation can be found in the "Doc"
 directory.
 Changes to the documentation source, once pushed back to the
 repository, will automatically revise the public version at
-readthedocs.org.
+readthedocs.io.
 You can also re-compile the documentation by going to the "Doc"
 directory and typing "make".
 The result will then be in "Doc/manual".
@@ -90,19 +90,8 @@ Makefile: Primarily for source file validation and to generate some of the
 MIT-license.txt: The license file. OpenDSA is distributed under an MIT open
 source license.
 
-**Modules: Tutorial source from an obsolete system for generating content. Will
-be removed.
-
-ODSAkhan-exercises: Our somewhat modified version of the khan-exercises
-distribution (the original is also available at GitHub). Note that you can view
-and run the exercises with just this distribution, however, the files must be
-hosted by a webserver. If you want to view them from your local machine, you
-must run your own webserver, such as the "WebServer" Python script included in
-this distribution. Simply run the script, then navigate to
-http://127.0.0.1:8000/Exercises/ in your browser. If the pages are accessed
-without the use of a webserver, they will either be a blank page or some
-gibberish. Alternatively, you can see the exercises at our mirror site:
-http://algoviz.org/OpenDSA/dev/OpenDSA/Exercises.
+ODSAkhan-exercises: Obsolete, will be removed soon. We used to keep
+our own hacked-up copy of the Khan Academy exercise framework.
 
 QBank: A question bank system under development. This is a submodule maintained
 at: https://github.com/cashaffer/QBank.
@@ -124,3 +113,9 @@ concept never gained much traction, and this might be removed at some point.
 WebServer: A command for invoking a simple python-based web server that will
 enable you to run the Khan Academy exercises if your machine is not running a
 true web server. You only need to have python installed for this to work.
+
+khan-exercises: The Khan Academy exercise framework.  This is a submodule maintained
+at: https://github.com/OpenDSA/khan-exercises. This is a mirror of the
+actual khan-exercises repository
+(https://github.com/Khan/khan-exercises), that we buffer here for
+stability.
